@@ -143,7 +143,7 @@
       <div style="font-size:16px;font-weight:600" id="artist-name">ANAKAN</div>
       <div style="font-size:12px;color:var(--text2);margin-top:2px" id="artist-meta"></div>
     </div>
-    <a href="https://open.spotify.com/artist/5LaYvFkFi2HRZVv6YTSPmr" target="_blank" style="font-size:12px;color:#1DB954;text-decoration:none;display:flex;align-items:center;gap:4px"><i class="ti ti-external-link"></i> Spotify</a>
+    <a id="artist-link" href="#" target="_blank" style="font-size:12px;color:#1DB954;text-decoration:none;display:flex;align-items:center;gap:4px"><i class="ti ti-external-link"></i> Spotify</a>
   </div>
 
   <div class="stats">
@@ -261,11 +261,20 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// =========================================================
+// ⬇️ CONFIGURATION : REMPLACE L'ID EN DESSOUS ⬇️
+// =========================================================
+
 const CLIENT_ID     = '0750b038dda44d5a896ca22617a7dc7e';
-const ARTIST_ID     = '5LaYvFkFi2HRZVv6YTSPmr';
+
+// 🔥 REMPLACE LE TEXTE ENTRE GUILLEMETS PAR LE VRAI ID DU LIEN ! 🔥
+const ARTIST_ID     = '5LaYvFkFi2HRZVv6YTSPmr'; 
+
 const MAX_DAILY     = 10;
 const ANTHROPIC_KEY = '';
 const REDIRECT_URI  = 'https://ssihanif.github.io/anakan-dashboard/';
+
+// =========================================================
 
 const GENRE_LABELS = {dance:'Dance & Electronic',world:'World Music',latin:'Latin',pop:'Pop'};
 const GENRE_CLASS  = {dance:'g-dance',world:'g-world',latin:'g-latin',pop:'g-pop'};
@@ -406,12 +415,14 @@ async function loadCatalogue() {
 
     // 1. Récupération du profil
     const arRes = await fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}`, { headers: { Authorization: 'Bearer ' + token } });
+    if(!arRes.ok) throw new Error("Artiste introuvable avec cet ID");
     const artist = await arRes.json();
     const genres = artist.genres || [];
 
     document.getElementById('artist-img').src = artist.images?.[1]?.url || '';
     document.getElementById('artist-name').textContent = artist.name;
     document.getElementById('artist-meta').textContent = (artist.followers?.total || 0).toLocaleString() + ' followers · ' + genres.slice(0, 3).join(', ');
+    document.getElementById('artist-link').href = artist.external_urls?.spotify || '#';
     document.getElementById('artist-card').style.display = 'flex';
     document.getElementById('badge-live').style.display = 'inline-flex';
 
@@ -459,19 +470,21 @@ async function loadCatalogue() {
     buildBookmarklet();
 
   } catch (e) {
-    document.getElementById('api-status').textContent = 'Erreur API Spotify';
-    document.getElementById('tracks-list').innerHTML = '<div class="empty"><i class="ti ti-alert-circle"></i>Erreur de chargement. Essayez de recharger la page.</div>';
+    document.getElementById('api-status').textContent = 'Erreur API Spotify ou ID invalide';
+    document.getElementById('tracks-list').innerHTML = '<div class="empty"><i class="ti ti-alert-circle"></i>Vérifiez l\'ID de l\'artiste dans le code. Essayez de recharger.</div>';
     console.error('[ANAKAN]', e);
     
     // Si l'erreur est liée au token, on le nettoie pour forcer une reconnexion au prochain clic
-    window.localStorage.removeItem('spotify_token');
-    window.localStorage.removeItem('spotify_token_expiry');
+    if(e.message.includes("PKCE") || e.message.includes("token")){
+      window.localStorage.removeItem('spotify_token');
+      window.localStorage.removeItem('spotify_token_expiry');
+    }
   }
 }
 
 function renderTracks(){
   const el=document.getElementById('tracks-list');
-  if(!tracks.length){el.innerHTML='<div class="empty"><i class="ti ti-music-off"></i>Aucun titre de ANAKAN trouvé sur Spotify pour le moment.</div>';return;}
+  if(!tracks.length){el.innerHTML='<div class="empty"><i class="ti ti-music-off"></i>Aucun titre trouvé. Vérifiez que l\'ID Artiste correspond bien au profil musical officiel.</div>';return;}
   el.innerHTML=tracks.map(t=>`
     <div class="track-card${selectedTrack?.id===t.id?' selected':''}" onclick="selectTrack('${t.id}')">
       <span style="font-size:12px;color:var(--text3);width:18px;flex-shrink:0">${t.num}</span>
