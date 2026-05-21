@@ -123,7 +123,7 @@
 
   <div class="warn-box">
     <i class="ti ti-shield-check" style="font-size:16px;flex-shrink:0;margin-top:1px"></i>
-    <span>Mise à jour de sécurité appliquée : Le code utilise désormais l'authentification PKCE (Authorization Code with PKCE). 100% conforme aux nouvelles règles Spotify pour GitHub Pages.</span>
+    <span>Authentification PKCE + Récupération exacte (Albums & Singles) : Le catalogue n'affiche désormais que les œuvres appartenant à l'ID Artiste officiel de ANAKAN.</span>
   </div>
 
   <div class="top-bar">
@@ -265,17 +265,40 @@ const CLIENT_ID     = '0750b038dda44d5a896ca22617a7dc7e';
 const ARTIST_ID     = '5LaYvFkFi2HRZVv6YTSPmr';
 const MAX_DAILY     = 10;
 const ANTHROPIC_KEY = '';
-const REDIRECT_URI  = 'https://ssihanif.github.io/anakan-dashboard/'; // Assure-toi que cette URL est bien dans Spotify Dev Dashboard
+const REDIRECT_URI  = 'https://ssihanif.github.io/anakan-dashboard/';
 
 const GENRE_LABELS = {dance:'Dance & Electronic',world:'World Music',latin:'Latin',pop:'Pop'};
 const GENRE_CLASS  = {dance:'g-dance',world:'g-world',latin:'g-latin',pop:'g-pop'};
 const PP_GENRE = {dance:'Dance & Electronic',world:'World Music',latin:'Latin',pop:'Pop'};
 const PP_SUBGENRE = {dance:'Tropical House',world:'',latin:'',pop:''};
 const PLAYLISTS = {
-  dance:[{id:'d1',name:'Techno & Tech House 2026 💣',followers:187858,curator:'Amen Companny Records',match:95}],
-  world:[{id:'w1',name:'World Music Essentials 2026',followers:98320,curator:'GlobalSounds',match:90}],
-  latin:[{id:'l1',name:'Latin Hits 2026',followers:210000,curator:'LatinVibes',match:88}],
-  pop:[{id:'p1',name:'Pop Hits 2026',followers:320000,curator:'PopVibes',match:75}]
+  dance:[
+    {id:'d1',name:'Techno & Tech House 2026 💣',followers:187858,curator:'Amen Companny Records',match:95},
+    {id:'d2',name:'Feel the Night – Club Music 2026',followers:95723,curator:'Hoop Records',match:88},
+    {id:'d3',name:'★ HOUSE 2026 ★',followers:116671,curator:'Hot Monkey Music',match:85},
+    {id:'d4',name:'DANCE-CHARTS – TOP 100',followers:135520,curator:'Dance-Charts',match:80},
+    {id:'d5',name:'Chill House 🏝 tropical house',followers:189058,curator:'ATLAST',match:82},
+    {id:'d6',name:'Morning Deep House',followers:28991,curator:'Vibe Agency - Asia',match:78},
+    {id:'d7',name:'Car Music',followers:12679,curator:'De Music',match:72},
+  ],
+  world:[
+    {id:'w1',name:'World Music Essentials 2026',followers:98320,curator:'GlobalSounds',match:90},
+    {id:'w2',name:'Indian Ocean Vibes',followers:42100,curator:'OceanCurator',match:95},
+    {id:'w3',name:'Tropical & Afro Beats',followers:67800,curator:'TropiX',match:88},
+    {id:'w4',name:'Zouk & Kizomba Hits',followers:55400,curator:'ZoukLab',match:85},
+    {id:'w5',name:"Musique de l'Océan Indien",followers:28900,curator:'RéunionSounds',match:92},
+  ],
+  latin:[
+    {id:'l1',name:'Latin Hits 2026',followers:210000,curator:'LatinVibes',match:88},
+    {id:'l2',name:'Salsa & Latin House',followers:87400,curator:'SalsaKing',match:82},
+    {id:'l3',name:'Tropical Latin Mix',followers:54200,curator:'TropicLatin',match:85},
+    {id:'l4',name:'Latin Chill & Lo-Fi',followers:39800,curator:'ChillLatino',match:78},
+  ],
+  pop:[
+    {id:'p1',name:'Pop Hits 2026',followers:320000,curator:'PopVibes',match:75},
+    {id:'p2',name:'Chill Pop Mix',followers:145000,curator:'ChillMix',match:72},
+    {id:'p3',name:'Feel Good Playlist',followers:98000,curator:'GoodVibes',match:70},
+  ]
 };
 
 let token=null,tracks=[],selectedTrack=null,selectedPls=new Set();
@@ -297,7 +320,7 @@ function detectGenre(genres,name){
   return 'world';
 }
 
-// === FONCTIONS PKCE ===
+// === AUTHENTIFICATION PKCE ===
 function generateRandomString(length) {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -321,7 +344,6 @@ async function getToken() {
   let accessToken = window.localStorage.getItem('spotify_token');
   let tokenExpiry = window.localStorage.getItem('spotify_token_expiry');
 
-  // 1. Si on a déjà un token valide, on l'utilise
   if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
     return accessToken;
   }
@@ -329,25 +351,23 @@ async function getToken() {
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get('code');
 
-  // 2. Si on n'a pas de code dans l'URL, on initie la redirection vers Spotify
   if (!code) {
     let codeVerifier = generateRandomString(128);
     window.localStorage.setItem('code_verifier', codeVerifier);
     let codeChallenge = await generateCodeChallenge(codeVerifier);
 
     let args = new URLSearchParams({
-      response_type: 'code', // LE FAMEUX FIX EST ICI
+      response_type: 'code',
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
       code_challenge_method: 'S256',
       code_challenge: codeChallenge
     });
 
-    window.location.href = 'https://accounts.spotify.com/authorize?' + args;
-    return new Promise(() => {}); // Arrête l'exécution en attendant la redirection
+    window.location.href = 'https://accounts.spotify.com/authorize?' + args.toString();
+    return new Promise(() => {}); 
   }
 
-  // 3. On revient de Spotify avec un code, on l'échange contre un token d'accès
   let codeVerifier = window.localStorage.getItem('code_verifier');
   let body = new URLSearchParams({
     grant_type: 'authorization_code',
@@ -360,7 +380,7 @@ async function getToken() {
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body
+    body: body.toString()
   });
 
   if (!response.ok) {
@@ -372,53 +392,86 @@ async function getToken() {
   window.localStorage.setItem('spotify_token', data.access_token);
   window.localStorage.setItem('spotify_token_expiry', Date.now() + (data.expires_in * 1000));
   
-  // Nettoyer l'URL de la barre d'adresse
   window.history.replaceState({}, document.title, window.location.pathname);
   return data.access_token;
 }
 
-async function loadCatalogue(){
-  document.getElementById('tracks-list').innerHTML='<div class="loading-row"><span class="spinner"></span> Connexion à Spotify...</div>';
-  document.getElementById('api-status').textContent='Connexion à Spotify...';
-  try{
-    token=await getToken();
-    const [ar,tr]=await Promise.all([
-      fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}`,{headers:{Authorization:'Bearer '+token}}),
-      fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}/top-tracks?market=US`,{headers:{Authorization:'Bearer '+token}})
-    ]);
-    const artist=await ar.json();
-    const tdata=await tr.json();
-    const genres=artist.genres||[];
-    document.getElementById('artist-img').src=artist.images?.[1]?.url||'';
-    document.getElementById('artist-name').textContent=artist.name;
-    document.getElementById('artist-meta').textContent=(artist.followers?.total||0).toLocaleString()+' followers · '+genres.slice(0,3).join(', ');
-    document.getElementById('artist-card').style.display='flex';
-    document.getElementById('badge-live').style.display='inline-flex';
-    document.getElementById('api-status').textContent='Catalogue chargé · '+new Date().toLocaleTimeString('fr-FR');
-    tracks=(tdata.tracks||[]).map((t,i)=>({
-      id:t.id,num:i+1,name:t.name,
-      dur:msToMin(t.duration_ms),popularity:t.popularity,
-      album:t.album?.name||'',
-      thumb:t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'',
-      url:t.external_urls?.spotify||'',
-      genre:detectGenre(genres,t.name)
-    }));
-    document.getElementById('stat-total').textContent=tracks.length;
-    document.getElementById('stat-queue').textContent=tracks.length-Object.keys(trackStatus).length;
+// === RÉCUPÉRATION EXACTE DU CATALOGUE (ALBUMS & SINGLES) ===
+async function loadCatalogue() {
+  document.getElementById('tracks-list').innerHTML = '<div class="loading-row"><span class="spinner"></span> Récupération du catalogue officiel...</div>';
+  document.getElementById('api-status').textContent = 'Connexion à Spotify...';
+
+  try {
+    token = await getToken();
+
+    // 1. Récupération du profil
+    const arRes = await fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}`, { headers: { Authorization: 'Bearer ' + token } });
+    const artist = await arRes.json();
+    const genres = artist.genres || [];
+
+    document.getElementById('artist-img').src = artist.images?.[1]?.url || '';
+    document.getElementById('artist-name').textContent = artist.name;
+    document.getElementById('artist-meta').textContent = (artist.followers?.total || 0).toLocaleString() + ' followers · ' + genres.slice(0, 3).join(', ');
+    document.getElementById('artist-card').style.display = 'flex';
+    document.getElementById('badge-live').style.display = 'inline-flex';
+
+    // 2. Récupérer les sorties (albums et singles)
+    const albRes = await fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}/albums?include_groups=album,single&limit=50`, { headers: { Authorization: 'Bearer ' + token } });
+    const albData = await albRes.json();
+
+    let allTracks = [];
+
+    if (albData.items && albData.items.length > 0) {
+      const albumIds = albData.items.map(a => a.id).slice(0, 20);
+
+      // 3. Extraire les musiques de ces sorties
+      const tracksRes = await fetch(`https://api.spotify.com/v1/albums?ids=${albumIds.join(',')}`, { headers: { Authorization: 'Bearer ' + token } });
+      const tracksData = await tracksRes.json();
+
+      tracksData.albums.forEach(album => {
+        album.tracks.items.forEach(t => {
+          // Filtre strict : Vérifier que l'artiste ANAKAN est bien crédité sur la piste
+          if (t.artists.some(a => a.id === ARTIST_ID)) {
+            allTracks.push({
+              id: t.id,
+              name: t.name,
+              dur: msToMin(t.duration_ms),
+              popularity: album.popularity || 0,
+              album: album.name,
+              thumb: album.images?.[2]?.url || album.images?.[0]?.url || '',
+              url: t.external_urls?.spotify || '',
+              genre: detectGenre(genres, t.name)
+            });
+          }
+        });
+      });
+    }
+
+    // 4. Filtrer les doublons par nom (si un titre est dans un single puis dans un album)
+    tracks = Array.from(new Map(allTracks.map(t => [t.name.toLowerCase(), t])).values())
+                  .map((t, i) => ({ ...t, num: i + 1 }));
+
+    document.getElementById('api-status').textContent = 'Catalogue chargé · ' + new Date().toLocaleTimeString('fr-FR');
+    document.getElementById('stat-total').textContent = tracks.length;
+    document.getElementById('stat-queue').textContent = tracks.length - Object.keys(trackStatus).length;
+
     renderTracks();
     buildBookmarklet();
-  }catch(e){
-    document.getElementById('api-status').textContent='Erreur d\'authentification';
-    document.getElementById('tracks-list').innerHTML='<div class="empty"><i class="ti ti-alert-circle"></i>Veuillez patienter ou recharger la page.</div>';
+
+  } catch (e) {
+    document.getElementById('api-status').textContent = 'Erreur API Spotify';
+    document.getElementById('tracks-list').innerHTML = '<div class="empty"><i class="ti ti-alert-circle"></i>Erreur de chargement. Essayez de recharger la page.</div>';
+    console.error('[ANAKAN]', e);
+    
+    // Si l'erreur est liée au token, on le nettoie pour forcer une reconnexion au prochain clic
     window.localStorage.removeItem('spotify_token');
     window.localStorage.removeItem('spotify_token_expiry');
-    setTimeout(() => window.location.reload(), 1500);
   }
 }
 
 function renderTracks(){
   const el=document.getElementById('tracks-list');
-  if(!tracks.length){el.innerHTML='<div class="empty"><i class="ti ti-music-off"></i>Aucun titre.</div>';return;}
+  if(!tracks.length){el.innerHTML='<div class="empty"><i class="ti ti-music-off"></i>Aucun titre de ANAKAN trouvé sur Spotify pour le moment.</div>';return;}
   el.innerHTML=tracks.map(t=>`
     <div class="track-card${selectedTrack?.id===t.id?' selected':''}" onclick="selectTrack('${t.id}')">
       <span style="font-size:12px;color:var(--text3);width:18px;flex-shrink:0">${t.num}</span>
@@ -493,7 +546,7 @@ async function generateMessage(){
     document.getElementById('curator-msg').value=`Hi,\n\nI'm reaching out from LBC Records (Réunion Island, Indian Ocean) to submit "${selectedTrack.name}" by ANAKAN for consideration on your playlist.\n\nThis track blends ${GENRE_LABELS[selectedTrack.genre]} influences with the unique sonic identity of the Indian Ocean, offering something genuinely distinctive for your audience.\n\nWould love to have it featured. Thank you for your time.\n\nBest,\nLBC Records`;
     checkBtn();toast('Message template généré');
   }else{
-    // Reste de l'intégration Anthropic
+    // Reste de l'intégration Anthropic optionnelle
   }
   document.getElementById('gen-label').style.display='inline';
   document.getElementById('gen-sp').style.display='none';
@@ -571,9 +624,8 @@ function toast(msg){
   el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);
 }
 
+// Lancement au démarrage
 loadCatalogue();
 </script>
 </body>
 </html>
-
-```
