@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANAKAN × PlaylistPartner — LBC Records</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a18;
+    --text2: #6b6b68;
+    --text3: #9b9b97;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --purple: #7F77DD;
+    --purple-dark: #534AB7;
+    --purple-light: #EEEDFE;
+    --green-bg: #EAF3DE;
+    --green-text: #3B6D11;
+    --teal-bg: #E1F5EE;
+    --teal-text: #0F6E56;
+    --coral-bg: #FAECE7;
+    --coral-text: #993C1D;
+    --pink-bg: #FBEAF0;
+    --pink-text: #993556;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #272725;
+      --bg3: #2e2e2b;
+      --text: #f0efe8;
+      --text2: #a0a09a;
+      --text3: #6e6e68;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+      --purple-light: #2a2660;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+  .top-title { font-size: 20px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .top-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .badge-live { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--green-bg); color: var(--green-text); font-weight: 500; display: none; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  @media(max-width:600px){ .stats { grid-template-columns: repeat(2,1fr); } }
+  .stat { background: var(--bg); border-radius: var(--radius); padding: 1rem; border: 0.5px solid var(--border); }
+  .stat-val { font-size: 24px; font-weight: 600; color: var(--text); }
+  .stat-lbl { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .artist-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; display: none; align-items: center; gap: 14px; margin-bottom: 1.5rem; }
+  .artist-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; background: var(--bg2); flex-shrink: 0; }
+  .artist-name { font-size: 16px; font-weight: 600; }
+  .artist-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+  .tab { padding: .55rem 1.1rem; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: color .15s; }
+  .tab.active { border-bottom-color: var(--purple); color: var(--text); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .65rem; }
+  .tracks-grid { display: flex; flex-direction: column; gap: 6px; }
+  .track-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .8rem 1rem; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+  .track-card:hover { border-color: var(--border2); }
+  .track-card.selected { border: 1.5px solid var(--purple); }
+  .track-thumb { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; background: var(--bg2); flex-shrink: 0; }
+  .track-thumb-ph { width: 38px; height: 38px; border-radius: 6px; background: var(--bg2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text3); }
+  .track-info { flex: 1; min-width: 0; }
+  .track-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .genre-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; flex-shrink: 0; white-space: nowrap; }
+  .g-dance { background: var(--purple-light); color: var(--purple-dark); }
+  .g-world { background: var(--teal-bg); color: var(--teal-text); }
+  .g-latin { background: var(--coral-bg); color: var(--coral-text); }
+  .g-pop { background: var(--pink-bg); color: var(--pink-text); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .s-done { background: #639922; }
+  .s-none { background: var(--border2); }
+  .submit-panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+  .panel-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.1rem; gap: 12px; }
+  .panel-thumb { width: 46px; height: 46px; border-radius: 7px; object-fit: cover; background: var(--bg2); flex-shrink: 0; }
+  .limit-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); margin-bottom: 1rem; }
+  .limit-track { flex: 1; height: 3px; background: var(--bg2); border-radius: 2px; }
+  .limit-fill { height: 3px; background: var(--purple); border-radius: 2px; transition: width .3s; }
+  .playlists-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; max-height: 230px; overflow-y: auto; }
+  .pl-row { display: flex; align-items: center; gap: 10px; padding: .55rem .8rem; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg2); }
+  .pl-check { width: 15px; height: 15px; accent-color: var(--purple); cursor: pointer; flex-shrink: 0; }
+  .pl-label { flex: 1; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .pl-name { font-size: 13px; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pl-curator { font-size: 11px; color: var(--text3); }
+  .pl-match { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: var(--purple-light); color: var(--purple-dark); flex-shrink: 0; }
+  .msg-wrap { margin-bottom: 1rem; }
+  .msg-label { display: flex; align-items: center; gap: 8px; margin-bottom: .4rem; font-size: 12px; color: var(--text2); }
+  textarea { width: 100%; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: .75rem; font-size: 13px; color: var(--text); background: var(--bg); min-height: 90px; resize: vertical; font-family: inherit; line-height: 1.6; outline: none; transition: border-color .15s; }
+  textarea:focus { border-color: var(--purple); }
+  textarea::placeholder { color: var(--text3); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { cursor: pointer; font-size: 13px; padding: .45rem .9rem; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text); transition: background .12s, transform .1s; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+  button:hover { background: var(--bg2); }
+  button:active { transform: scale(.98); }
+  button.primary { background: var(--purple); border-color: var(--purple); color: #fff; }
+  button.primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+  button.primary:disabled { background: var(--bg2); border-color: var(--border); color: var(--text3); cursor: not-allowed; transform: none; }
+  button.sm { font-size: 11px; padding: 3px 9px; }
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--text2); font-size: 14px; }
+  .empty i { font-size: 28px; display: block; margin-bottom: .5rem; color: var(--text3); }
+  .log-row { display: flex; gap: 8px; font-size: 12px; color: var(--text2); padding: .45rem 0; border-bottom: 0.5px solid var(--border); align-items: center; }
+  .log-row:last-child { border-bottom: none; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 1.5px solid rgba(127,119,221,.3); border-top-color: var(--purple); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--purple); color: #fff; padding: .6rem 1.1rem; border-radius: var(--radius); font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; display: flex; align-items: center; gap: 6px; }
+  .toast.show { opacity: 1; }
+  .loading-row { display: flex; align-items: center; gap: 10px; padding: 1rem; font-size: 13px; color: var(--text2); }
+  .warning-box { background: #FEF3CD; border: 0.5px solid #F59E0B; border-radius: var(--radius); padding: .7rem 1rem; font-size: 12px; color: #92400E; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="warning-box">
+    <i class="ti ti-shield-lock" style="font-size:16px;flex-shrink:0;margin-top:1px"></i>
+    <span>Ce dashboard contient des credentials Spotify. Ne pas partager cette URL publiquement. Après usage, faire <strong>Rotate client secret</strong> sur <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:inherit">developer.spotify.com</a>.</span>
+  </div>
+
+  <div class="top-bar">
+    <div>
+      <div class="top-title">
+        <i class="ti ti-brand-spotify" style="color:#1DB954;font-size:22px"></i>
+        ANAKAN × PlaylistPartner
+      </div>
+      <div class="top-sub" id="api-status">Connexion à Spotify...</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="badge-live" id="badge-live"><i class="ti ti-check"></i> Spotify live</span>
+      <button onclick="loadCatalogue()"><i class="ti ti-refresh"></i> Actualiser</button>
+    </div>
+  </div>
+
+  <div class="artist-card" id="artist-card">
+    <img id="artist-img" class="artist-img" src="" alt="ANAKAN">
+    <div style="flex:1">
+      <div class="artist-name" id="artist-name">ANAKAN</div>
+      <div class="artist-meta" id="artist-meta"></div>
+    </div>
+    <a href="https://open.spotify.com/artist/5LaYvFkFi2HRZVv6YTSPmr" target="_blank" style="font-size:12px;color:#1DB954;text-decoration:none;display:flex;align-items:center;gap:4px"><i class="ti ti-external-link"></i> Spotify</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Titres catalogue</div><div class="stat-sub">ANAKAN</div></div>
+    <div class="stat"><div class="stat-val" id="stat-submitted">0</div><div class="stat-lbl">Soumis aujourd'hui</div><div class="stat-sub" id="stat-limit-sub">0/10 limite</div></div>
+    <div class="stat"><div class="stat-val">410+</div><div class="stat-lbl">Playlists ciblées</div><div class="stat-sub">PlaylistPartner</div></div>
+    <div class="stat"><div class="stat-val" id="stat-queue">—</div><div class="stat-lbl">En attente</div><div class="stat-sub">file de soumission</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('catalogue')">Catalogue</div>
+    <div class="tab" onclick="switchTab('soumettre')">Soumettre</div>
+    <div class="tab" onclick="switchTab('log')">Journal</div>
+  </div>
+
+  <!-- CATALOGUE -->
+  <div id="tab-catalogue">
+    <div class="section-label">Catalogue Spotify live</div>
+    <div class="tracks-grid" id="tracks-list">
+      <div class="loading-row"><span class="spinner"></span> Chargement depuis Spotify...</div>
+    </div>
+  </div>
+
+  <!-- SOUMETTRE -->
+  <div id="tab-soumettre" style="display:none">
+    <div id="submit-empty" class="empty">
+      <i class="ti ti-music-off"></i>
+      Sélectionner un titre dans le catalogue
+    </div>
+    <div id="submit-panel" style="display:none">
+      <div class="submit-panel">
+        <div class="panel-header">
+          <div style="display:flex;gap:12px;align-items:center">
+            <img id="panel-thumb" class="panel-thumb" src="" alt="">
+            <div>
+              <div style="font-size:15px;font-weight:600" id="panel-name">—</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px" id="panel-meta">—</div>
+            </div>
+          </div>
+          <span class="genre-badge" id="panel-genre">—</span>
+        </div>
+
+        <div class="limit-bar">
+          <i class="ti ti-clock"></i>
+          <span>Soumissions aujourd'hui :</span>
+          <div class="limit-track"><div class="limit-fill" id="limit-fill" style="width:0%"></div></div>
+          <span id="limit-text">0 / 10</span>
+        </div>
+
+        <div class="section-label">Playlists — <span id="pl-genre-label">—</span></div>
+        <div class="playlists-list" id="playlists-list"></div>
+
+        <div class="msg-wrap">
+          <div class="msg-label">
+            <i class="ti ti-sparkles"></i> Message curateur
+            <button class="sm" onclick="generateMessage()" id="btn-gen">
+              <span id="gen-label"><i class="ti ti-wand"></i> Générer IA</span>
+              <span id="gen-sp" class="spinner" style="display:none"></span>
+            </button>
+          </div>
+          <textarea id="curator-msg" placeholder="Cliquer Générer IA pour un message personnalisé..." oninput="checkBtn()"></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button class="primary" id="btn-submit" onclick="submitTrack()" disabled>
+            <i class="ti ti-send"></i> Soumettre
+          </button>
+          <button onclick="openPP()"><i class="ti ti-external-link"></i> PlaylistPartner</button>
+          <button onclick="copyMsg()"><i class="ti ti-copy"></i> Copier message</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" style="display:none">
+    <div class="section-label">Journal des soumissions</div>
+    <div id="log-list"><div class="empty"><i class="ti ti-notes"></i>Aucune soumission enregistrée.</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLIENT_ID     = '0750b038dda44d5a896ca22617a7dc7e';
+const CLIENT_SECRET = '93ce3704f76741ca9209808e0a51a1c5';
+const ARTIST_ID     = '5LaYvFkFi2HRZVv6YTSPmr';
+const MAX_DAILY     = 10;
+const ANTHROPIC_KEY = ''; // Optionnel : coller votre clé Anthropic ici pour la génération IA
+
+const GENRE_LABELS = {dance:'Dance & Electro',world:'World Music',latin:'Latin',pop:'Pop'};
+const GENRE_CLASS  = {dance:'g-dance',world:'g-world',latin:'g-latin',pop:'g-pop'};
+
+const PLAYLISTS = {
+  dance:[
+    {id:'d1',name:'Techno & Tech House 2026 💣',followers:187858,curator:'Amen Companny Records',match:95},
+    {id:'d2',name:'★ HOUSE 2026 ★',followers:116671,curator:'Hot Monkey Music',match:88},
+    {id:'d3',name:'Feel the Night – Club Music 2026',followers:95723,curator:'Hoop Records',match:85},
+    {id:'d4',name:'DANCE-CHARTS – TOP 100',followers:135520,curator:'Dance-Charts',match:78},
+    {id:'d5',name:'Chill House 🏝 tropical house',followers:189058,curator:'ATLAST',match:82},
+    {id:'d6',name:'Dance & House 2026',followers:79644,curator:'vibingdeep',match:80},
+    {id:'d7',name:'Spring Chill 2026 🌸',followers:72880,curator:'Addal',match:70},
+  ],
+  world:[
+    {id:'w1',name:'World Music Essentials 2026',followers:98320,curator:'GlobalSounds',match:90},
+    {id:'w2',name:'Indian Ocean Vibes',followers:42100,curator:'OceanCurator',match:95},
+    {id:'w3',name:'Tropical & Afro Beats',followers:67800,curator:'TropiX',match:88},
+    {id:'w4',name:'Zouk & Kizomba Hits',followers:55400,curator:'ZoukLab',match:85},
+    {id:'w5',name:"Musique de l'Océan Indien",followers:28900,curator:'RéunionSounds',match:92},
+  ],
+  latin:[
+    {id:'l1',name:'Latin Hits 2026',followers:210000,curator:'LatinVibes',match:88},
+    {id:'l2',name:'Salsa & Latin House',followers:87400,curator:'SalsaKing',match:82},
+    {id:'l3',name:'Tropical Latin Mix',followers:54200,curator:'TropicLatin',match:85},
+    {id:'l4',name:'Latin Chill & Lo-Fi',followers:39800,curator:'ChillLatino',match:78},
+  ],
+  pop:[
+    {id:'p1',name:'Pop Hits 2026',followers:320000,curator:'PopVibes',match:75},
+    {id:'p2',name:'Chill Pop Mix',followers:145000,curator:'ChillMix',match:72},
+    {id:'p3',name:'Feel Good Playlist',followers:98000,curator:'GoodVibes',match:70},
+  ]
+};
+
+let token=null, tracks=[], selectedTrack=null, selectedPls=new Set();
+let submittedToday=0, log=[], trackStatus={};
+
+function fmt(n){return n>=1000?(n/1000).toFixed(0)+'k':String(n);}
+function msToMin(ms){const s=Math.round(ms/1000);return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');}
+
+function detectGenre(genres, name){
+  const n=name.toLowerCase();
+  if(/zoukous|kali|lemuriana|when you taste|glory of time/.test(n)) return 'world';
+  if(/brassero|vale la pena|aïe papi|papi/.test(n)) return 'latin';
+  if(/new day|always too far/.test(n)) return 'dance';
+  const map={dance:['dance','house','techno','edm','electronic','tropical house'],
+             world:['world','zouk','kizomba','afro','maloya','reunion','indian ocean'],
+             latin:['latin','salsa','reggaeton','bossa'],pop:['pop','r&b','soul']};
+  for(const [g,kws] of Object.entries(map))
+    for(const g2 of genres) for(const k of kws) if(g2.toLowerCase().includes(k)) return g;
+  return 'world';
+}
+
+async function getToken(){
+  const r=await fetch('https://accounts.spotify.com/api/token',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','Authorization':'Basic '+btoa(CLIENT_ID+':'+CLIENT_SECRET)},
+    body:'grant_type=client_credentials'
+  });
+  if(!r.ok) throw new Error('Auth Spotify échouée ('+r.status+')');
+  return (await r.json()).access_token;
+}
+
+async function loadCatalogue(){
+  document.getElementById('tracks-list').innerHTML='<div class="loading-row"><span class="spinner"></span> Connexion à Spotify...</div>';
+  document.getElementById('api-status').textContent='Connexion à Spotify...';
+  try{
+    token=await getToken();
+    const [ar,tr]=await Promise.all([
+      fetch('https://api.spotify.com/v1/artists/'+ARTIST_ID,{headers:{Authorization:'Bearer '+token}}),
+      fetch('https://api.spotify.com/v1/artists/'+ARTIST_ID+'/top-tracks?market=FR',{headers:{Authorization:'Bearer '+token}})
+    ]);
+    const artist=await ar.json();
+    const tdata=await tr.json();
+    const genres=artist.genres||[];
+
+    document.getElementById('artist-img').src=artist.images?.[1]?.url||'';
+    document.getElementById('artist-name').textContent=artist.name;
+    document.getElementById('artist-meta').textContent=(artist.followers?.total||0).toLocaleString()+' followers · '+genres.slice(0,3).join(', ');
+    document.getElementById('artist-card').style.display='flex';
+    document.getElementById('badge-live').style.display='inline-flex';
+    document.getElementById('api-status').textContent='Catalogue chargé · '+new Date().toLocaleTimeString('fr-FR');
+
+    tracks=(tdata.tracks||[]).map((t,i)=>({
+      id:t.id, num:i+1, name:t.name,
+      dur:msToMin(t.duration_ms),
+      popularity:t.popularity,
+      album:t.album?.name||'',
+      thumb:t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'',
+      url:t.external_urls?.spotify||'',
+      genre:detectGenre(genres,t.name)
+    }));
+
+    document.getElementById('stat-total').textContent=tracks.length;
+    document.getElementById('stat-queue').textContent=tracks.length-Object.keys(trackStatus).length;
+    renderTracks();
+  }catch(e){
+    document.getElementById('api-status').textContent='Erreur — '+e.message;
+    document.getElementById('tracks-list').innerHTML='<div class="empty"><i class="ti ti-alert-circle"></i>'+e.message+'</div>';
+  }
+}
+
+function renderTracks(){
+  const el=document.getElementById('tracks-list');
+  if(!tracks.length){el.innerHTML='<div class="empty"><i class="ti ti-music-off"></i>Aucun titre.</div>';return;}
+  el.innerHTML=tracks.map(t=>`
+    <div class="track-card${selectedTrack?.id===t.id?' selected':''}" onclick="selectTrack('${t.id}')">
+      <span style="font-size:12px;color:var(--text3);width:18px;flex-shrink:0">${t.num}</span>
+      ${t.thumb?`<img class="track-thumb" src="${t.thumb}" alt="">`:`<div class="track-thumb-ph"><i class="ti ti-music"></i></div>`}
+      <div class="track-info">
+        <div class="track-name">${t.name}</div>
+        <div class="track-meta">ANAKAN · ${t.dur}${t.popularity?' · pop. '+t.popularity:''}</div>
+      </div>
+      <span class="genre-badge ${GENRE_CLASS[t.genre]||'g-world'}">${GENRE_LABELS[t.genre]||t.genre}</span>
+      <div class="status-dot ${trackStatus[t.id]?'s-done':'s-none'}"></div>
+    </div>`).join('');
+}
+
+function selectTrack(id){
+  selectedTrack=tracks.find(t=>t.id===id);
+  selectedPls=new Set();
+  document.getElementById('curator-msg').value='';
+  renderTracks(); renderPanel(); switchTab('soumettre');
+}
+
+function renderPanel(){
+  if(!selectedTrack){
+    document.getElementById('submit-empty').style.display='block';
+    document.getElementById('submit-panel').style.display='none';
+    return;
+  }
+  document.getElementById('submit-empty').style.display='none';
+  document.getElementById('submit-panel').style.display='block';
+  document.getElementById('panel-name').textContent=selectedTrack.name;
+  document.getElementById('panel-meta').textContent='ANAKAN · '+selectedTrack.dur+(selectedTrack.album?' · '+selectedTrack.album:'');
+  document.getElementById('panel-thumb').src=selectedTrack.thumb||'';
+  const gb=document.getElementById('panel-genre');
+  gb.textContent=GENRE_LABELS[selectedTrack.genre]||selectedTrack.genre;
+  gb.className='genre-badge '+(GENRE_CLASS[selectedTrack.genre]||'g-world');
+  document.getElementById('pl-genre-label').textContent=GENRE_LABELS[selectedTrack.genre]||selectedTrack.genre;
+  const pls=PLAYLISTS[selectedTrack.genre]||PLAYLISTS.world;
+  document.getElementById('playlists-list').innerHTML=pls.map(p=>`
+    <div class="pl-row">
+      <input type="checkbox" class="pl-check" id="pl-${p.id}" onchange="togglePl('${p.id}')" ${selectedPls.has(p.id)?'checked':''}>
+      <label class="pl-label" for="pl-${p.id}">
+        <div style="flex:1;min-width:0">
+          <div class="pl-name">${p.name}</div>
+          <div class="pl-curator">par ${p.curator}</div>
+        </div>
+        <span style="font-size:11px;color:var(--text3);flex-shrink:0">${fmt(p.followers)}</span>
+        <span class="pl-match">${p.match}%</span>
+      </label>
+    </div>`).join('');
+  updateLimit(); checkBtn();
+}
+
+function togglePl(id){selectedPls.has(id)?selectedPls.delete(id):selectedPls.add(id);checkBtn();}
+
+function updateLimit(){
+  const pct=Math.round((submittedToday/MAX_DAILY)*100);
+  document.getElementById('limit-fill').style.width=pct+'%';
+  document.getElementById('limit-text').textContent=submittedToday+' / '+MAX_DAILY;
+  document.getElementById('stat-submitted').textContent=submittedToday;
+  document.getElementById('stat-limit-sub').textContent=submittedToday+'/'+MAX_DAILY+' limite';
+  document.getElementById('stat-queue').textContent=Math.max(0,tracks.length-Object.keys(trackStatus).length);
+}
+
+function checkBtn(){
+  const msg=document.getElementById('curator-msg').value.trim();
+  document.getElementById('btn-submit').disabled=!(selectedPls.size>0&&msg.length>0&&submittedToday<MAX_DAILY);
+}
+
+async function generateMessage(){
+  if(!selectedTrack) return;
+  if(!ANTHROPIC_KEY){
+    document.getElementById('curator-msg').value=`Hi,\n\nI'm reaching out from LBC Records (Réunion Island, Indian Ocean) to submit "${selectedTrack.name}" by ANAKAN for consideration on your playlist.\n\nThis track blends ${GENRE_LABELS[selectedTrack.genre]} influences with the unique sonic identity of the Indian Ocean, offering something genuinely distinctive for your audience.\n\nWould love to have it featured. Thank you for your time.\n\nBest,\nLBC Records`;
+    checkBtn(); toast('Message template généré'); return;
+  }
+  document.getElementById('gen-label').style.display='none';
+  document.getElementById('gen-sp').style.display='inline-block';
+  document.getElementById('btn-gen').disabled=true;
+  const pls=Array.from(selectedPls).map(id=>(PLAYLISTS[selectedTrack.genre]||[]).find(p=>p.id===id)?.name).filter(Boolean);
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:500,
+        system:'Music marketing for LBC Records (Réunion). Write short, authentic, professional playlist submission messages for Spotify curators. 3-4 sentences max, in English, direct and confident tone. Mention track, artist, genre, and why it fits the playlist.',
+        messages:[{role:'user',content:`Curator message for "${selectedTrack.name}" by ANAKAN (LBC Records, Réunion, Indian Ocean). Genre: ${GENRE_LABELS[selectedTrack.genre]}. Duration: ${selectedTrack.dur}. Target playlists: ${pls.join(', ')||GENRE_LABELS[selectedTrack.genre]+' playlists'}.`}]
+      })
+    });
+    const d=await r.json();
+    document.getElementById('curator-msg').value=d.content?.find(b=>b.type==='text')?.text||'';
+    checkBtn();
+  }catch(e){toast('Erreur API — '+e.message);}
+  document.getElementById('gen-label').style.display='inline';
+  document.getElementById('gen-sp').style.display='none';
+  document.getElementById('btn-gen').disabled=false;
+}
+
+function submitTrack(){
+  if(!selectedTrack||!selectedPls.size||submittedToday>=MAX_DAILY) return;
+  submittedToday++; trackStatus[selectedTrack.id]='done';
+  const t=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const plNames=Array.from(selectedPls).map(id=>(PLAYLISTS[selectedTrack.genre]||[]).find(p=>p.id===id)?.name).filter(Boolean);
+  log.unshift({time:t,track:selectedTrack.name,pls:plNames,genre:selectedTrack.genre});
+  renderTracks(); updateLimit(); renderLog();
+  toast('Soumission enregistrée — '+selectedTrack.name);
+  window.open('https://playlistpartner.com/submit','_blank');
+  setTimeout(()=>{selectedTrack=null;renderPanel();},400);
+}
+
+function renderLog(){
+  const el=document.getElementById('log-list');
+  if(!log.length){el.innerHTML='<div class="empty"><i class="ti ti-notes"></i>Aucune soumission.</div>';return;}
+  el.innerHTML=log.map(l=>`<div class="log-row">
+    <span style="color:var(--text3);flex-shrink:0">${l.time}</span>
+    <span style="font-weight:500;flex-shrink:0">${l.track}</span>
+    <span style="color:var(--text3)">→</span>
+    <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.pls.join(' · ')}</span>
+    <span class="genre-badge ${GENRE_CLASS[l.genre]||'g-world'}" style="font-size:10px">${GENRE_LABELS[l.genre]||l.genre}</span>
+  </div>`).join('');
+}
+
+function openPP(){window.open('https://playlistpartner.com/submit','_blank');}
+function copyMsg(){
+  const msg=document.getElementById('curator-msg').value;
+  if(!msg){toast('Aucun message');return;}
+  navigator.clipboard?.writeText(msg).then(()=>toast('Copié !')).catch(()=>toast('Copie manuelle nécessaire'));
+}
+function switchTab(t){
+  ['catalogue','soumettre','log'].forEach(n=>{document.getElementById('tab-'+n).style.display=n===t?'block':'none';});
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['catalogue','soumettre','log'][i]===t));
+}
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.innerHTML='<i class="ti ti-check"></i> '+msg;
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+loadCatalogue();
+</script>
+</body>
+</html>
