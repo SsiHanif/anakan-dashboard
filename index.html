@@ -1,24 +1,3 @@
-C'est une très bonne chose d'avoir généré un nouveau *Client Secret* ! Cependant, comme expliqué précédemment, si tu mets ce nouveau secret dans le fichier `index.html` sur GitHub Pages, **l'erreur CORS bloquera toujours la page** et ton nouveau secret sera à nouveau exposé publiquement.
-
-Pour que ton dashboard fonctionne **exclusivement sur GitHub Pages (sans backend)**, j'ai modifié l'authentification de ton code. Il utilise désormais le flux **"Implicit Grant"**.
-
-* **L'avantage :** Il n'a plus besoin du `CLIENT_SECRET`. L'erreur CORS va disparaître.
-* **Le fonctionnement :** Au chargement de la page, si tu n'es pas connecté, le site te redirigera une fraction de seconde vers Spotify pour te demander l'autorisation, puis te ramènera sur ton dashboard avec un token d'accès valide caché dans l'URL.
-
-### ⚠️ Étape cruciale AVANT de mettre à jour ton code :
-
-Puisque le site va faire une redirection, Spotify doit savoir que ton site est "de confiance".
-
-1. Va sur ton [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Clique sur ton app **LBC Records — ANAKAN Submission**, puis va dans **Settings**.
-3. Cherche le champ **Redirect URIs** et ajoute exactement cette URL : `https://ssihanif.github.io/anakan-dashboard/`
-4. Clique sur **Save**.
-
-### Voici ton fichier `index.html` mis à jour
-
-Tu peux copier ce code, remplacer tout le contenu de ton ancien fichier, et le glisser sur ton repo GitHub.
-
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
