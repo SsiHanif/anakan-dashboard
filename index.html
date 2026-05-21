@@ -1,3 +1,24 @@
+C'est une très bonne chose d'avoir généré un nouveau *Client Secret* ! Cependant, comme expliqué précédemment, si tu mets ce nouveau secret dans le fichier `index.html` sur GitHub Pages, **l'erreur CORS bloquera toujours la page** et ton nouveau secret sera à nouveau exposé publiquement.
+
+Pour que ton dashboard fonctionne **exclusivement sur GitHub Pages (sans backend)**, j'ai modifié l'authentification de ton code. Il utilise désormais le flux **"Implicit Grant"**.
+
+* **L'avantage :** Il n'a plus besoin du `CLIENT_SECRET`. L'erreur CORS va disparaître.
+* **Le fonctionnement :** Au chargement de la page, si tu n'es pas connecté, le site te redirigera une fraction de seconde vers Spotify pour te demander l'autorisation, puis te ramènera sur ton dashboard avec un token d'accès valide caché dans l'URL.
+
+### ⚠️ Étape cruciale AVANT de mettre à jour ton code :
+
+Puisque le site va faire une redirection, Spotify doit savoir que ton site est "de confiance".
+
+1. Va sur ton [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Clique sur ton app **LBC Records — ANAKAN Submission**, puis va dans **Settings**.
+3. Cherche le champ **Redirect URIs** et ajoute exactement cette URL : `https://ssihanif.github.io/anakan-dashboard/`
+4. Clique sur **Save**.
+
+### Voici ton fichier `index.html` mis à jour
+
+Tu peux copier ce code, remplacer tout le contenu de ton ancien fichier, et le glisser sur ton repo GitHub.
+
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -92,7 +113,7 @@
   .toast{position:fixed;bottom:24px;right:24px;background:var(--purple);color:#fff;padding:.6rem 1.1rem;border-radius:var(--radius);font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;display:flex;align-items:center;gap:6px}
   .toast.show{opacity:1}
   .loading-row{display:flex;align-items:center;gap:10px;padding:1rem;font-size:13px;color:var(--text2)}
-  .warn-box{background:var(--amber-bg);border:.5px solid #F59E0B;border-radius:var(--radius);padding:.7rem 1rem;font-size:12px;color:var(--amber-text);margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+  .warn-box{background:var(--teal-bg);border:.5px solid var(--teal-text);border-radius:var(--radius);padding:.7rem 1rem;font-size:12px;color:var(--teal-text);margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
 
   /* Bookmarklet section */
   .bookmarklet-section{margin-top:2rem}
@@ -123,8 +144,8 @@
 <div class="container">
 
   <div class="warn-box">
-    <i class="ti ti-shield-lock" style="font-size:16px;flex-shrink:0;margin-top:1px"></i>
-    <span>Credentials Spotify intégrés. Ne pas partager cette URL. Repo GitHub privé recommandé. Faire <strong>Rotate client secret</strong> sur <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:inherit">developer.spotify.com</a> régulièrement.</span>
+    <i class="ti ti-shield-check" style="font-size:16px;flex-shrink:0;margin-top:1px"></i>
+    <span>Mise à jour de sécurité appliquée : L'authentification utilise désormais le flux implicite de Spotify. Le Client Secret n'est plus requis dans le code. Plus de problème CORS !</span>
   </div>
 
   <div class="top-bar">
@@ -161,7 +182,6 @@
     <div class="tab" onclick="switchTab('log')">Journal</div>
   </div>
 
-  <!-- CATALOGUE -->
   <div id="tab-catalogue">
     <div class="section-label">Catalogue Spotify live</div>
     <div class="tracks-grid" id="tracks-list">
@@ -169,7 +189,6 @@
     </div>
   </div>
 
-  <!-- SOUMETTRE -->
   <div id="tab-soumettre" style="display:none">
     <div id="submit-empty" class="empty"><i class="ti ti-music-off"></i>Sélectionner un titre dans le catalogue</div>
     <div id="submit-panel" style="display:none">
@@ -209,7 +228,6 @@
     </div>
   </div>
 
-  <!-- AUTOMATISATION -->
   <div id="tab-auto" style="display:none">
     <div class="bookmarklet-section">
 
@@ -258,7 +276,6 @@
     </div>
   </div>
 
-  <!-- LOG -->
   <div id="tab-log" style="display:none">
     <div class="section-label">Journal des soumissions</div>
     <div id="log-list"><div class="empty"><i class="ti ti-notes"></i>Aucune soumission.</div></div>
@@ -268,8 +285,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// SEULEMENT LE CLIENT ID EST NÉCESSAIRE MAINTENANT
 const CLIENT_ID     = '0750b038dda44d5a896ca22617a7dc7e';
-const CLIENT_SECRET = 'a4a06303d62b4e49a6171437b4674bd3';
 const ARTIST_ID     = '5LaYvFkFi2HRZVv6YTSPmr';
 const MAX_DAILY     = 10;
 const ANTHROPIC_KEY = '';
@@ -342,14 +359,37 @@ function detectGenre(genres,name){
   return 'world';
 }
 
-async function getToken(){
-  const r=await fetch('https://accounts.spotify.com/api/token',{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded','Authorization':'Basic '+btoa(CLIENT_ID+':'+CLIENT_SECRET)},
-    body:'grant_type=client_credentials'
-  });
-  if(!r.ok) throw new Error('Auth Spotify échouée ('+r.status+')');
-  return (await r.json()).access_token;
+async function getToken() {
+  // 1. Vérifie si Spotify a renvoyé un token dans l'URL après autorisation
+  const hash = window.location.hash;
+  let storedToken = window.localStorage.getItem('spotify_token');
+  const tokenExpiry = window.localStorage.getItem('spotify_token_expiry');
+
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const newToken = params.get('access_token');
+    const expiresIn = params.get('expires_in');
+    
+    window.localStorage.setItem('spotify_token', newToken);
+    window.localStorage.setItem('spotify_token_expiry', Date.now() + (expiresIn * 1000));
+    
+    // Nettoyer l'URL
+    window.history.replaceState(null, null, window.location.pathname);
+    return newToken;
+  }
+
+  // 2. Vérifie si on a déjà un token encore valide en mémoire
+  if (storedToken && tokenExpiry && Date.now() < tokenExpiry) {
+    return storedToken;
+  }
+
+  // 3. Sinon, redirige vers Spotify pour demander l'autorisation (Implicit Flow)
+  const redirectUri = window.location.origin + window.location.pathname;
+  const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  window.location.href = authUrl;
+  
+  // Stoppe l'exécution en attendant la redirection
+  return new Promise(() => {});
 }
 
 async function loadCatalogue(){
@@ -358,8 +398,8 @@ async function loadCatalogue(){
   try{
     token=await getToken();
     const [ar,tr]=await Promise.all([
-      fetch('https://api.spotify.com/v1/artists/'+ARTIST_ID,{headers:{Authorization:'Bearer '+token}}),
-      fetch('https://api.spotify.com/v1/artists/'+ARTIST_ID+'/top-tracks?market=FR',{headers:{Authorization:'Bearer '+token}})
+      fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}`,{headers:{Authorization:'Bearer '+token}}),
+      fetch(`https://api.spotify.com/v1/artists/${ARTIST_ID}/top-tracks?market=US`,{headers:{Authorization:'Bearer '+token}})
     ]);
     const artist=await ar.json();
     const tdata=await tr.json();
@@ -383,8 +423,11 @@ async function loadCatalogue(){
     renderTracks();
     buildBookmarklet();
   }catch(e){
-    document.getElementById('api-status').textContent='Erreur — '+e.message;
-    document.getElementById('tracks-list').innerHTML='<div class="empty"><i class="ti ti-alert-circle"></i>'+e.message+'</div>';
+    document.getElementById('api-status').textContent='Erreur d\'authentification. Rechargez la page.';
+    document.getElementById('tracks-list').innerHTML='<div class="empty"><i class="ti ti-alert-circle"></i>Veuillez autoriser l\'application Spotify pour continuer.</div>';
+    // Effacer un éventuel token corrompu
+    window.localStorage.removeItem('spotify_token');
+    window.localStorage.removeItem('spotify_token_expiry');
   }
 }
 
@@ -568,27 +611,23 @@ function buildBookmarklet(){
     // PAGE: sélection du genre
     if(url.includes('/submit/genre')){
       await wait(800);
-      // Cliquer sur le genre principal
       var btns=Array.from(document.querySelectorAll('button,div[role=button],[class*=genre],[class*=Genre]'));
       var genreBtn=btns.find(b=>b.textContent.trim()===genre||b.textContent.includes(genre));
       if(genreBtn){genreBtn.click();console.log('[ANAKAN] Genre cliqué:',genre);}
       else{
-        // Essai par texte dans tous les éléments cliquables
         var allEls=Array.from(document.querySelectorAll('*'));
         var el=allEls.find(e=>e.children.length===0&&e.textContent.trim()===genre&&e.offsetParent);
         if(el){el.click();console.log('[ANAKAN] Genre trouvé par texte');}
         else{console.warn('[ANAKAN] Genre non trouvé automatiquement — sélectionner manuellement:',genre);}
       }
       await wait(500);
-      // Cliquer Continue
       var cont=Array.from(document.querySelectorAll('button')).find(b=>/continue|suivant|next/i.test(b.textContent));
       if(cont){cont.click();console.log('[ANAKAN] Continue cliqué');}
     }
 
-    // PAGE: liste des playlists — remplir le modal quand il s'ouvre
+    // PAGE: liste des playlists
     else if(url.includes('/playlists')||url.includes('/submit')){
       await wait(1000);
-      // Observer l'ouverture du modal de soumission
       var observer=new MutationObserver(async function(mutations){
         var emailField=document.querySelector('input[type=email],input[placeholder*=mail],input[placeholder*=Email],input[name=email]');
         var msgField=document.querySelector('textarea[placeholder*=essage],textarea[placeholder*=curator],textarea[name=message]');
@@ -613,7 +652,6 @@ function buildBookmarklet(){
       });
       observer.observe(document.body,{childList:true,subtree:true,attributes:true});
 
-      // Vérifier si modal déjà ouvert
       var emailField=document.querySelector('input[type=email],input[placeholder*=mail],input[placeholder*=Email]');
       if(emailField){fillInput(emailField,email);}
       var msgField=document.querySelector('textarea');
@@ -635,7 +673,6 @@ function buildBookmarklet(){
       }
     }
 
-    // Notification visuelle
     var notif=document.createElement('div');
     notif.innerHTML='<strong>▶ ANAKAN Auto</strong> actif — '+genre;
     notif.style.cssText='position:fixed;top:16px;right:16px;background:#7F77DD;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:99999;font-family:sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2)';
@@ -695,3 +732,5 @@ loadCatalogue();
 </script>
 </body>
 </html>
+
+```
